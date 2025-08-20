@@ -11,6 +11,10 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Carrinho vazio ou inválido" });
       }
 
+      const baseUrl = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000";
+
       const preference = {
         items: items.map(item => ({
           title: item.nome,
@@ -22,18 +26,13 @@ export default async function handler(req, res) {
           email: dadosCliente?.email || "cliente@email.com",
         },
         back_urls: {
-          success: process.env.VERCEL_URL
-            ? `https://${process.env.VERCEL_URL}/api/webhook`
-            : "http://localhost:3000/api/webhook",
-          failure: process.env.VERCEL_URL
-            ? `https://${process.env.VERCEL_URL}/api/webhook`
-            : "http://localhost:3000/api/webhook",
-          pending: process.env.VERCEL_URL
-            ? `https://${process.env.VERCEL_URL}/api/webhook`
-            : "http://localhost:3000/api/webhook",
+          success: `${baseUrl}/sucesso.html`,
+          failure: `${baseUrl}/falha.html`,
+          pending: `${baseUrl}/pendente.html`,
         },
         auto_return: "approved",
         binary_mode: true,
+        notification_url: `${baseUrl}/api/webhook`, // aqui sim vai o webhook
       };
 
       const response = await mercadopago.preferences.create(preference);
