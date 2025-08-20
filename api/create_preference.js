@@ -3,6 +3,14 @@ import mercadopago from "mercadopago";
 mercadopago.configurations.setAccessToken(process.env.MP_ACCESS_TOKEN);
 
 export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*"); // permite qualquer origem
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   if (req.method === "POST") {
     try {
       const { items, dadosCliente } = req.body;
@@ -32,7 +40,7 @@ export default async function handler(req, res) {
         },
         auto_return: "approved",
         binary_mode: true,
-        notification_url: `${baseUrl}/api/webhook`, // aqui sim vai o webhook
+        notification_url: `${baseUrl}/api/webhook`,
       };
 
       const response = await mercadopago.preferences.create(preference);
