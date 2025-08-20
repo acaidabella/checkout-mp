@@ -3,7 +3,7 @@ import mercadopago from "mercadopago";
 // Configura o Mercado Pago com o Access Token
 mercadopago.configurations.setAccessToken(process.env.MP_ACCESS_TOKEN);
 
-// Configuração opcional para garantir que o body seja parseado
+// Configuração para que o body seja parseado
 export const config = {
   api: {
     bodyParser: true,
@@ -11,20 +11,21 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  // Permitir qualquer origem do front-end (ou coloque seu domínio exato)
+  // Origem que será permitida (se quiser liberar geral, use "*")
   const allowedOrigin = "https://acai-da-bella.web.app";
 
-  // Headers CORS
+  // ----- CORS headers -----
   res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   res.setHeader("Access-Control-Allow-Credentials", "true");
 
-  // Responde a requisição preflight
+  // ----- Preflight -----
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
+  // ----- Apenas POST -----
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido" });
   }
@@ -59,6 +60,8 @@ export default async function handler(req, res) {
     };
 
     const response = await mercadopago.preferences.create(preference);
+
+    // Retorna somente o ID da preferência
     return res.status(200).json({ id: response.body.id });
   } catch (error) {
     console.error("Erro ao criar preferência:", error);
