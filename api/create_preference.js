@@ -11,19 +11,9 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  // 🔹 Lista de origens permitidas
-  const allowedOrigins = [
-    "https://acai-da-bella.web.app",
-    "https://checkout-mp.vercel.app", // caso chame internamente
-    "http://localhost:3000"           // para testes locais
-  ];
-
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  // 🔹 CORS liberado para qualquer origem (teste!)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   // ----- Preflight -----
@@ -67,6 +57,7 @@ export default async function handler(req, res) {
 
     const response = await mercadopago.preferences.create(preference);
 
+    // Retorna somente o ID da preferência
     return res.status(200).json({ id: response.body.id });
   } catch (error) {
     console.error("Erro ao criar preferência:", error);
