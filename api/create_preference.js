@@ -1,9 +1,11 @@
-import mercadopago from "mercadopago";
+import { MercadoPagoConfig, Preference } from "mercadopago";
 
-// Configura o Mercado Pago com o Access Token
-mercadopago.configurations.setAccessToken(process.env.MP_ACCESS_TOKEN);
+// 🔹 Cria o client com seu Access Token
+const client = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN,
+});
 
-// Configuração para que o body seja parseado
+// 🔹 Vercel API Route config (habilita body parsing)
 export const config = {
   api: {
     bodyParser: true,
@@ -11,17 +13,15 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  // 🔹 CORS liberado para qualquer origem (teste!)
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  // ----- CORS -----
+  res.setHeader("Access-Control-Allow-Origin", "*"); // em produção troque pelo seu domínio do Firebase
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // ----- Preflight -----
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
-  // ----- Apenas POST -----
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido" });
   }
@@ -37,28 +37,29 @@ export default async function handler(req, res) {
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000";
 
-    const preference = {
-      items: items.map(item => ({
-        title: item.nome,
-        quantity: 1,
-        unit_price: Number(item.preco),
-      })),
-      payer: {
-        name: dadosCliente?.nome || "Cliente",
-        email: dadosCliente?.email || "cliente@email.com",
-      },
-      back_urls: {
-        success: `${baseUrl}/sucesso`,
-        failure: `${baseUrl}/falha`,
-        pending: `${baseUrl}/pendente`,
-      },
-      auto_return: "approved",
-    };
+    const preference = new Preference(client);
 
-    const response = await mercadopago.preferences.create(preference);
+    const response = await preference.create({
+      body: {
+        items: items.map((item) => ({
+          title: item.nome,
+          quantity: 1,
+          unit_price: Number(item.preco),
+        })),
+        payer: {
+          name: dadosCliente?.nome || "Cliente",
+          email: dadosCliente?.email || "cliente@email.com",
+        },
+        back_urls: {
+          success: `${baseUrl}/sucesso`,
+          failure: `${baseUrl}/falha`,
+          pending: `${baseUrl}/pendente`,
+        },
+        auto_return: "approved",
+      },
+    });
 
-    // Retorna somente o ID da preferência
-    return res.status(200).json({ id: response.body.id });
+    return res.status(200).json({ id: response.id, init_point: response.init_point });
   } catch (error) {
     console.error("Erro ao criar preferência:", error);
     return res.status(500).json({ error: "Erro interno ao criar preferência" });
