@@ -7,7 +7,7 @@ const payment = new Payment(client);
 
 export const config = {
   api: {
-    bodyParser: false, // 🚨 importante, desativa o bodyParser padrão
+    bodyParser: false, 
   },
 };
 
@@ -43,10 +43,10 @@ export default async function handler(req, res) {
       return res.status(400).send("Pagamento sem ID");
     }
 
-    // 🔹 Responde logo ao Mercado Pago (evita timeout)
+  
     res.status(200).end("OK");
 
-    // 🔹 Continua o processamento em background
+   
     (async () => {
       try {
         const pagamento = await payment.get({ id: paymentId });
