@@ -10,7 +10,7 @@ export const config = {
   },
 };
 
-const ALLOWED_ORIGIN = "https://acai-da-bella.web.app"; // <-- troque para o domínio real
+const ALLOWED_ORIGIN = "https://acai-da-bella.web.app"; // <-- troque se precisar
 
 export default async function handler(req, res) {
   // ----- CORS -----
@@ -33,7 +33,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Carrinho vazio ou inválido" });
     }
 
-    const total = items.reduce((acc, item) => acc + Number(item.preco), 0);
+    // 🔹 soma com base no unit_price que o front manda
+    const total = items.reduce(
+      (acc, item) => acc + (Number(item.unit_price) * (item.quantity || 1)),
+      0
+    );
 
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
@@ -66,7 +70,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       id: response.id,
       init_point: response.init_point,
-      sandbox_init_point: response.sandbox_init_point, // útil para testes
+      sandbox_init_point: response.sandbox_init_point,
     });
   } catch (error) {
     console.error("Erro ao criar preferência:", error);
