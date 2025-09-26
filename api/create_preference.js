@@ -1,5 +1,5 @@
 import { MercadoPagoConfig, Preference } from "mercadopago";
-import { db } from "../../firebase"; // ajuste pro seu Firebase config
+import { db } from "./firebase-config.js"; // ajuste pro seu Firebase config
 import { set, ref } from "firebase/database";
 
 const client = new MercadoPagoConfig({
