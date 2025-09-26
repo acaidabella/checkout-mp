@@ -1,5 +1,5 @@
-import { MercadoPagoConfig, Payment } from "mercadopago";
-import { db } from "../../firebase"; // ajuste o path pro seu Firebase config
+import { MercadoPagoConfig, Preference } from "mercadopago";
+import { db } from "../../firebase"; // ajuste pro seu Firebase config
 import { set, ref } from "firebase/database";
 
 const client = new MercadoPagoConfig({
@@ -8,51 +8,66 @@ const client = new MercadoPagoConfig({
 
 export const config = {
   api: {
-    bodyParser: false, // Mercado Pago envia raw body
+    bodyParser: true, // preferências recebem JSON
   },
 };
 
-function buffer(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on("data", (chunk) => chunks.push(chunk));
-    req.on("end", () => resolve(Buffer.concat(chunks)));
-    req.on("error", reject);
-  });
-}
+// --- Permitir CORS ---
+const ALLOWED_ORIGIN = "https://acai-da-bella.web.app";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).end();
-  }
+  res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Método não permitido" });
 
   try {
-    const rawBody = await buffer(req);
-    const data = JSON.parse(rawBody.toString());
+    const { items, dadosCliente, taxaEntrega } = req.body;
 
-    
-    if (data.type === "payment") {
-      const paymentId = data.data.id;
-
-      const payment = new Payment(client);
-      const result = await payment.get({ id: paymentId });
-
-      if (result.status === "approved") {
-       
-        const pedidoId = `pedido_${Date.now()}`;
-        await set(ref(db, "pedidos/" + pedidoId), {
-          cliente: result.payer,
-          valor: result.transaction_amount,
-          metodo: result.payment_method_id,
-          status: result.status,
-          criadoEm: new Date().toISOString(),
-        });
-      }
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "Carrinho vazio ou inválido" });
     }
+    const totalProdutos = items.reduce((acc, item) => acc + Number(item.preco) + Number(item.complementosPreco || 0), 0);
+    const totalFinal = totalProdutos + Number(taxaEntrega || 0);
 
-    return res.status(200).end();
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000";
+
+    const preference = new Preference(client);
+
+    const response = await preference.create({
+      body: {
+        items: [
+          {
+            title: "Compra no MeuSite 🛒",
+            quantity: 1,
+            unit_price: totalFinal,
+          },
+        ],
+        payer: {
+          name: dadosCliente?.nome || "Cliente",
+          email: dadosCliente?.email || "cliente@email.com",
+        },
+        back_urls: {
+          success: `${baseUrl}/sucesso`,
+          failure: `${baseUrl}/falha`,
+          pending: `${baseUrl}/pendente`,
+        },
+        auto_return: "approved",
+      },
+    });
+
+    return res.status(200).json({
+      id: response.id,
+      init_point: response.init_point,
+      sandbox_init_point: response.sandbox_init_point,
+    });
+
   } catch (error) {
-    console.error("Erro no webhook:", error);
-    return res.status(500).end();
+    console.error("Erro ao criar preferência:", error);
+    return res.status(500).json({ error: "Erro interno ao criar preferência" });
   }
 }
