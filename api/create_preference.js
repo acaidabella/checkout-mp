@@ -80,7 +80,7 @@ export default async function handler(req, res) {
       sandbox_init_point: response.sandbox_init_point,
     });
   } catch (error) {
-    console.error("Erro ao criar preferência:", error);
+    console.error("Erro ao criar preferência:", JSON.stringify(error, null, 2));
     return res
       .status(500)
       .json({ error: "Erro interno ao criar preferência" });
