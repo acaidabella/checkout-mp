@@ -1,9 +1,4 @@
 import { MercadoPagoConfig, Preference } from "mercadopago";
-console.log("BODY RECEBIDO:", req.body);
-console.log("Items:", items);
-console.log("Taxa Entrega:", taxaEntrega);
-console.log("Dados Cliente:", dadosCliente);
-
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN,
@@ -30,6 +25,12 @@ export default async function handler(req, res) {
   try {
     const { items, dadosCliente, taxaEntrega } = req.body;
 
+    // ✅ LOGS PARA DEBUG
+    console.log("BODY RECEBIDO:", req.body);
+    console.log("Items:", items);
+    console.log("Taxa Entrega:", taxaEntrega);
+    console.log("Dados Cliente:", dadosCliente);
+
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "Carrinho vazio ou inválido" });
     }
@@ -45,6 +46,8 @@ export default async function handler(req, res) {
     const totalFinal =
       Number(totalProdutos) +
       Number((taxaEntrega || 0).toString().replace(",", "."));
+
+    console.log("TOTAL FINAL CALCULADO:", totalFinal);
 
     if (isNaN(totalFinal) || totalFinal <= 0) {
       return res.status(400).json({ error: "Valor total inválido" });
