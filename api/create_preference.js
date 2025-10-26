@@ -35,13 +35,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Carrinho vazio ou inválido" });
     }
 
-    const totalProdutos = items.reduce(
-      (acc, item) =>
-        Number(acc) +
-        Number((item.preco || 0).toString().replace(",", ".")) +
-        Number((item.complementosPreco || 0).toString().replace(",", ".")),
-      0
-    );
+    const totalProdutos = items.reduce((acc, item) =>
+  Number(acc) + 
+  Number((item.unit_price || 0).toString().replace(",", ".")) *
+  Number(item.quantity || 1), 0);
+
 
     const totalFinal =
       Number(totalProdutos) +
