@@ -1,4 +1,9 @@
 import { MercadoPagoConfig, Preference } from "mercadopago";
+console.log("BODY RECEBIDO:", req.body);
+console.log("Items:", items);
+console.log("Taxa Entrega:", taxaEntrega);
+console.log("Dados Cliente:", dadosCliente);
+
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN,
