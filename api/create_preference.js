@@ -10,7 +10,6 @@ export const config = {
   },
 };
 
-// Libera CORS
 const ALLOWED_ORIGIN = "https://acai-da-bella.web.app";
 
 export default async function handler(req, res) {
@@ -30,16 +29,21 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Carrinho vazio ou inválido" });
     }
 
-    // Soma dos produtos
     const totalProdutos = items.reduce(
       (acc, item) =>
         Number(acc) +
-        Number(item.preco || 0) +
-        Number(item.complementosPreco || 0),
+        Number((item.preco || 0).toString().replace(",", ".")) +
+        Number((item.complementosPreco || 0).toString().replace(",", ".")),
       0
     );
 
-    const totalFinal = Number(totalProdutos) + Number(taxaEntrega || 0);
+    const totalFinal =
+      Number(totalProdutos) +
+      Number((taxaEntrega || 0).toString().replace(",", "."));
+
+    if (isNaN(totalFinal) || totalFinal <= 0) {
+      return res.status(400).json({ error: "Valor total inválido" });
+    }
 
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
@@ -51,9 +55,10 @@ export default async function handler(req, res) {
       body: {
         items: [
           {
-            title: "Compra no MeuSite 🛒",
+            title: "Pedido Açaí Da Bella 🫐💜",
             quantity: 1,
-            unit_price: Number(totalFinal), // 🔥 GARANTIA: É número!
+            currency_id: "BRL",
+            unit_price: Number(totalFinal),
           },
         ],
         payer: {
