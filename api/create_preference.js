@@ -10,7 +10,7 @@ export const config = {
   },
 };
 
-// --- Permitir CORS ---
+// Libera CORS
 const ALLOWED_ORIGIN = "https://acai-da-bella.web.app";
 
 export default async function handler(req, res) {
@@ -19,7 +19,9 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Método não permitido" });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
 
   try {
     const { items, dadosCliente, taxaEntrega } = req.body;
@@ -28,12 +30,16 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Carrinho vazio ou inválido" });
     }
 
+    // Soma dos produtos
     const totalProdutos = items.reduce(
-      (acc, item) => acc + Number(item.preco) + Number(item.complementosPreco || 0),
+      (acc, item) =>
+        Number(acc) +
+        Number(item.preco || 0) +
+        Number(item.complementosPreco || 0),
       0
     );
 
-    const totalFinal = totalProdutos + Number(taxaEntrega || 0);
+    const totalFinal = Number(totalProdutos) + Number(taxaEntrega || 0);
 
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
@@ -47,7 +53,7 @@ export default async function handler(req, res) {
           {
             title: "Compra no MeuSite 🛒",
             quantity: 1,
-            unit_price: totalFinal,
+            unit_price: Number(totalFinal), // 🔥 GARANTIA: É número!
           },
         ],
         payer: {
@@ -70,7 +76,8 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("Erro ao criar preferência:", error);
-    return res.status(500).json({ error: "Erro interno ao criar preferência" });
+    return res
+      .status(500)
+      .json({ error: "Erro interno ao criar preferência" });
   }
 }
-
